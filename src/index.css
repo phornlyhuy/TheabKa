@@ -1,0 +1,233 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-kh-moul: 'Moul', cursive, system-ui;
+    --font-kh-body: 'Kantumruy Pro', 'Battambang', sans-serif;
+    --font-kh-display: 'Siemreap', sans-serif;
+    --font-cursive: 'Alex Brush', cursive;
+    --font-serif: 'Playfair Display', serif;
+  }
+}
+
+.font-moul {
+  font-family: var(--font-kh-moul);
+}
+
+.font-kantumruy {
+  font-family: var(--font-kh-body);
+}
+
+.font-siemreap {
+  font-family: var(--font-kh-display);
+}
+
+.font-script {
+  font-family: var(--font-cursive);
+}
+
+.font-serif-elegant {
+  font-family: var(--font-serif);
+}
+
+/* Khmer Gold & Traditional Accents */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #b48325 0%, #ffd700 35%, #d4af37 60%, #996515 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-gradient-bg {
+  background: linear-gradient(135deg, #c59b27 0%, #f6e27a 40%, #d4af37 70%, #9c6c19 100%);
+}
+
+.gold-border {
+  border-image: linear-gradient(to right, #996515, #f5d77f, #b38728) 1;
+}
+
+/* Warm linen cream background matching user reference photo */
+.khmer-pattern-bg {
+  background-color: #f7f2e9;
+  background-image: radial-gradient(#d4af37 0.6px, transparent 0.6px), radial-gradient(#d4af37 0.6px, #f7f2e9 0.6px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+}
+
+.burgundy-banner-card {
+  background-color: #3e0a14;
+  color: #ffffff;
+  border-radius: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 15px 35px -10px rgba(62, 10, 20, 0.4);
+}
+
+.burgundy-btn {
+  background-color: #3e0a14;
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.burgundy-btn:hover {
+  background-color: #2b060d;
+}
+
+.dark-khmer-pattern-bg {
+  background-color: #1a1412;
+  background-image: radial-gradient(#d4af37 0.75px, transparent 0.75px), radial-gradient(#d4af37 0.75px, #1a1412 0.75px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+}
+
+/* Glassmorphism for wedding cards */
+.wedding-card-glass {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 20px 40px -15px rgba(180, 131, 37, 0.12), 0 0 1px 1px rgba(255, 255, 255, 0.7) inset;
+}
+
+.wedding-card-dark {
+  background: rgba(26, 20, 18, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(212, 175, 55, 0.2) inset;
+}
+
+@keyframes envelope-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes prewedding-ken-burns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+.envelope-card-enter {
+  animation: envelope-card-enter 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.prewedding-photo-active {
+  z-index: 1;
+  animation: prewedding-ken-burns 5.2s ease-out both;
+  will-change: transform, opacity;
+}
+
+.prewedding-photo-outgoing {
+  z-index: 2;
+  animation: prewedding-photo-fade 900ms ease-in both;
+  will-change: opacity;
+}
+
+.invitation-ambient-overlay {
+  background-image:
+    radial-gradient(ellipse at 15% 20%, rgba(212, 175, 55, 0.28), transparent 42%),
+    radial-gradient(ellipse at 82% 72%, rgba(197, 155, 39, 0.24), transparent 40%),
+    radial-gradient(circle, rgba(180, 131, 37, 0.2) 1px, transparent 1.5px);
+  background-size: 160% 160%, 160% 160%, 36px 36px;
+  background-position: 0% 0%, 100% 100%, 0 0;
+  animation: invitation-ambient-drift 28s ease-in-out infinite alternate;
+}
+
+.prewedding-gallery-card {
+  animation: prewedding-gallery-enter 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.prewedding-gallery-card-left {
+  animation-delay: 100ms;
+}
+
+.prewedding-gallery-card-right {
+  animation-delay: 260ms;
+}
+
+.prewedding-gallery-photo {
+  transform: scale(1.02);
+  animation: prewedding-gallery-ken-burns 7s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.prewedding-gallery-photo-left {
+  transform-origin: 35% 45%;
+}
+
+.prewedding-gallery-photo-right {
+  transform-origin: 65% 55%;
+  animation-delay: -3.5s;
+}
+
+@keyframes prewedding-gallery-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes prewedding-gallery-ken-burns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes invitation-ambient-drift {
+  from {
+    background-position: 0% 0%, 100% 100%, 0 0;
+  }
+  to {
+    background-position: 100% 100%, 0% 0%, 36px 36px;
+  }
+}
+
+@keyframes prewedding-photo-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .envelope-card-enter,
+  .prewedding-photo-active,
+  .prewedding-photo-outgoing,
+  .invitation-ambient-overlay,
+  .prewedding-gallery-card,
+  .prewedding-gallery-photo {
+    animation: none;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(180, 131, 37, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(180, 131, 37, 0.7);
+}

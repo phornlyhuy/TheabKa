@@ -1,0 +1,6 @@
+{
+  "name": "សិរីមង្គល - Khmer Digital Wedding Invitation",
+  "description": "ប្រព័ន្ធធៀបការឌីជីថលខ្មែរទំនើប បង្កើតលិខិតអញ្ជើញផ្ទាល់ខ្លួនតាមភ្ញៀវម្នាក់ៗ គ្រប់គ្រងបញ្ជីភ្ញៀវ RSVP និង QR Code",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
