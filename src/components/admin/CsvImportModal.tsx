@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload, FileText, CheckCircle2, AlertTriangle, AlertCircle, Download } from 'lucide-react';
 import { storage } from '../../services/storage';
 import { CsvGuestRow } from '../../types/wedding';
+import { isSupabaseConfigured, saveAdminGuests } from '../../services/supabase';
 
 interface CsvImportModalProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   const [rowErrors, setRowErrors] = useState<Array<{ row: number; error: string; data: any }>>([]);
   const [hasParsed, setHasParsed] = useState(false);
   const [fileName, setFileName] = useState<string>('');
+  const [importError, setImportError] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -41,12 +44,14 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
     setHasParsed(true);
   };
 
-  const handleConfirmImport = () => {
+  const handleConfirmImport = async () => {
     if (parsedRows.length === 0) return;
 
-    let importedCount = 0;
-    parsedRows.forEach((row) => {
-      storage.addGuest({
+    setIsImporting(true);
+    setImportError('');
+    const previousGuests = storage.getGuests();
+    try {
+      const importedGuests = parsedRows.map(row => storage.addGuest({
         honorificKm: row.honorificKm || 'លោក/លោកស្រី',
         honorificEn: row.honorificEn || '',
         nameKm: row.nameKm,
@@ -54,12 +59,17 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
         phoneNumber: row.phoneNumber,
         note: row.note,
         isActive: true,
-      });
-      importedCount++;
-    });
-
-    onImportSuccess(importedCount);
-    onClose();
+      }));
+      if (isSupabaseConfigured) await saveAdminGuests(importedGuests);
+      onImportSuccess(importedGuests.length);
+      onClose();
+    } catch (error) {
+      console.error('Failed to import guests into shared storage', error);
+      storage.saveGuests(previousGuests);
+      setImportError('Import failed. The shared database was not updated; check your admin connection and try again.');
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const handleDownloadTemplate = () => {
@@ -107,6 +117,11 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
 
         {/* Scrollable Body */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1">
+          {importError && (
+            <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-xs text-rose-800">
+              {importError}
+            </div>
+          )}
           {/* Template helper */}
           <div className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs">
             <span className="text-amber-900 font-medium">
@@ -251,11 +266,11 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
             </button>
             <button
               onClick={handleConfirmImport}
-              disabled={parsedRows.length === 0}
+              disabled={parsedRows.length === 0 || isImporting}
               type="button"
               className="px-5 py-2.5 rounded-xl bg-[#4A0E17] hover:bg-[#32060f] disabled:opacity-50 text-white text-xs font-semibold shadow transition-all cursor-pointer"
             >
-              បញ្ចូលក្នុងបញ្ជី ({parsedRows.length})
+              {isImporting ? 'កំពុងរក្សាទុក...' : `បញ្ចូលក្នុងបញ្ជី (${parsedRows.length})`}
             </button>
           </div>
         </div>

@@ -122,14 +122,7 @@ export const storage = {
       const stored = localStorage.getItem(STORAGE_KEYS.GUESTS);
       if (stored) {
         const parsed: Guest[] = JSON.parse(stored);
-        if (parsed.length > 0) {
-          return parsed.map(g => ({
-            ...g,
-            honorificKm: 'ភ្ញៀវកិត្តិយស',
-            phoneNumber: '',
-            tableNumber: '',
-          }));
-        }
+        return parsed;
       }
     } catch (e) {
       console.error('Failed to load guests', e);
@@ -141,13 +134,7 @@ export const storage = {
 
   saveGuests(guests: Guest[]): boolean {
     try {
-      const cleaned = guests.map(g => ({
-        ...g,
-        honorificKm: 'ភ្ញៀវកិត្តិយស',
-        phoneNumber: '',
-        tableNumber: '',
-      }));
-      localStorage.setItem(STORAGE_KEYS.GUESTS, JSON.stringify(cleaned));
+      localStorage.setItem(STORAGE_KEYS.GUESTS, JSON.stringify(guests));
       return true;
     } catch (e) {
       console.error('Failed to save guests', e);
@@ -177,13 +164,13 @@ export const storage = {
     const guest: Guest = {
       id: 'guest_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       token: generateGuestToken(),
-      honorificKm: 'ភ្ញៀវកិត្តិយស',
-      honorificEn: 'Honored Guest',
+      honorificKm: newGuestData.honorificKm || 'ភ្ញៀវកិត្តិយស',
+      honorificEn: newGuestData.honorificEn || 'Honored Guest',
       nameKm: newGuestData.nameKm,
       nameEn: newGuestData.nameEn || '',
       photoUrl: newGuestData.photoUrl || '',
       side: 'mutual',
-      phoneNumber: '',
+      phoneNumber: newGuestData.phoneNumber || '',
       allocatedSeats: 1,
       tableNumber: '',
       note: newGuestData.note || '',
@@ -208,9 +195,6 @@ export const storage = {
     const updatedGuest: Guest = {
       ...guests[index],
       ...updates,
-      honorificKm: 'ភ្ញៀវកិត្តិយស',
-      phoneNumber: '',
-      tableNumber: '',
       updatedAt: new Date().toISOString(),
     };
     guests[index] = updatedGuest;

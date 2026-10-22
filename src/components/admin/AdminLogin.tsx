@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, ShieldCheck, Eye, EyeOff, AlertCircle, ArrowLeft, KeyRound } from 'lucide-react';
 import { storage } from '../../services/storage';
+import { isSupabaseConfigured, supabase } from '../../services/supabase';
 
 interface AdminLoginProps {
   onSuccess: () => void;
@@ -8,6 +9,7 @@ interface AdminLoginProps {
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onCancel }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -16,6 +18,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onCancel }) =
   // Check lockout on mount
   useEffect(() => {
     const checkLockout = () => {
+      if (isSupabaseConfigured) return;
       const status = storage.isLockedOut();
       if (status.locked) {
         setLockoutRemaining(status.remainingSeconds);
@@ -29,8 +32,38 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onCancel }) =
     return () => clearInterval(interval);
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSupabaseConfigured) {
+      if (!email.trim() || !password) {
+        setError('សូមបញ្ចូល Email និងពាក្យសម្ងាត់ Admin');
+        return;
+      }
+      if (!supabase) {
+        setError('ការកំណត់ Supabase មិនពេញលេញទេ។');
+        return;
+      }
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (loginError) {
+        setError('Email ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ។');
+        return;
+      }
+      const { data: isAdmin, error: adminCheckError } = await supabase.rpc('is_wedding_admin');
+      if (adminCheckError || !isAdmin) {
+        await supabase.auth.signOut();
+        setError(adminCheckError
+          ? 'មិនអាចផ្ទៀងផ្ទាត់សិទ្ធិ Admin បានទេ។'
+          : 'គណនីនេះមិនទាន់ត្រូវបានអនុញ្ញាតជា Admin ទេ។');
+        return;
+      }
+      setError('');
+      onSuccess();
+      return;
+    }
+
     if (!password.trim()) {
       setError('សូមបញ្ចូលពាក្យសម្ងាត់ Admin');
       return;
@@ -64,9 +97,30 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onCancel }) =
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
+          {isSupabaseConfigured && (
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-1.5 font-kantumruy">
+                Admin Email
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError('');
+                }}
+                placeholder="admin@example.com"
+                autoComplete="username"
+                className="w-full px-4 py-3 rounded-xl border border-stone-300 text-stone-900 focus:outline-none focus:border-[#4A0E17] focus:ring-1 focus:ring-[#4A0E17] text-sm"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-1.5 font-kantumruy">
-              ពាក្យសម្ងាត់សុវត្ថិភាព (Master Admin Password)
+              {isSupabaseConfigured
+                ? 'ពាក្យសម្ងាត់ Admin (Admin Password)'
+                : 'ពាក្យសម្ងាត់សុវត្ថិភាព (Master Admin Password)'}
             </label>
             <div className="relative">
               <input
@@ -78,6 +132,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onCancel }) =
                   setError('');
                 }}
                 placeholder="បញ្ចូលពាក្យសម្ងាត់..."
+                autoComplete="current-password"
                 className="w-full pl-10 pr-12 py-3 rounded-xl border border-stone-300 text-stone-900 focus:outline-none focus:border-[#4A0E17] focus:ring-1 focus:ring-[#4A0E17] font-mono tracking-wider text-sm disabled:bg-stone-100"
                 autoFocus
               />

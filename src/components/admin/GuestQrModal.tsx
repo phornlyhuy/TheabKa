@@ -101,7 +101,7 @@ export const GuestQrModal: React.FC<GuestQrModalProps> = ({ guest, isOpen, onClo
             <div className="w-48 h-48 flex items-center justify-center p-3 text-xs text-stone-600 leading-relaxed">
               {personalUrl
                 ? 'កំពុងបង្កើត QR Code...'
-                : 'សូមផ្សព្វផ្សាយវេបសាយទៅកាន់ URL សាធារណៈ HTTPS ជាមុនសិន។ QR ពី localhost មិនអាចបើកលើទូរស័ព្ទភ្ញៀវបានទេ។'}
+                : 'សូមកំណត់ Supabase និងផ្សព្វផ្សាយវេបសាយលើ URL សាធារណៈ HTTPS ជាមុនសិន។ QR ពី localhost មិនអាចបើកលើទូរស័ព្ទភ្ញៀវបានទេ។'}
             </div>
           )}
         </div>
@@ -143,7 +143,7 @@ export const GuestQrModal: React.FC<GuestQrModalProps> = ({ guest, isOpen, onClo
             ) : (
               <span
                 className="py-2 px-3 rounded-xl border border-stone-200 text-stone-400 font-medium text-xs flex items-center justify-center gap-1.5"
-                title="ត្រូវការវេបសាយសាធារណៈ"
+                title="ត្រូវការ Supabase និងវេបសាយសាធារណៈ HTTPS"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>បើកមើល</span>

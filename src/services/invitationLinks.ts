@@ -1,3 +1,5 @@
+import { isSupabaseConfigured } from './supabase';
+
 const configuredAppUrl = import.meta.env.VITE_APP_URL?.trim();
 
 function isLocalHost(hostname: string): boolean {
@@ -36,6 +38,7 @@ export function getPublicAppUrl(): string | null {
 }
 
 export function getInvitationUrl(token: string): string | null {
+  if (!isSupabaseConfigured) return null;
   const baseUrl = getPublicAppUrl();
   if (!baseUrl) return null;
 

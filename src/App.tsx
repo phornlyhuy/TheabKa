@@ -11,17 +11,26 @@ import { GuestInvitationView } from './components/guest/GuestInvitationView';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { Shield, HelpCircle, KeyRound } from 'lucide-react';
+import {
+  fetchGuestByToken,
+  fetchPublishedWeddingConfig,
+  isSupabaseConfigured,
+  supabase,
+} from './services/supabase';
 
 export default function App() {
   const [config, setConfig] = useState<WeddingConfig>(storage.getConfig());
   const [currentGuest, setCurrentGuest] = useState<Guest | null>(null);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(storage.isAdminLoggedIn());
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(
+    isSupabaseConfigured ? false : storage.isAdminLoggedIn(),
+  );
   const [showAdminView, setShowAdminView] = useState(false);
   const [isEnvelopeOpened, setIsEnvelopeOpened] = useState(false);
   const [invalidToken, setInvalidToken] = useState(false);
+  const [isLoadingRoute, setIsLoadingRoute] = useState(true);
+  const [routeLoadError, setRouteLoadError] = useState('');
 
-  // Parse URL query parameter or hash on mount and popstate
-  const syncRouteFromUrl = () => {
+  const syncRouteFromUrl = async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const hash = window.location.hash;
 
@@ -33,30 +42,53 @@ export default function App() {
 
     if (adminParam) {
       setShowAdminView(true);
+      setIsLoadingRoute(false);
       return;
     }
 
-    if (token) {
-      const guest = storage.getGuestByToken(token);
-      if (guest) {
-        setCurrentGuest(guest);
-        setInvalidToken(false);
+    try {
+      setRouteLoadError('');
+      if (isSupabaseConfigured) {
+        const publishedConfig = await fetchPublishedWeddingConfig();
+        if (publishedConfig) setConfig(publishedConfig);
+      }
+
+      if (token) {
+        const guest = isSupabaseConfigured
+          ? await fetchGuestByToken(token)
+          : storage.getGuestByToken(token);
+        if (guest) {
+          setCurrentGuest(guest);
+          setInvalidToken(false);
+        } else {
+          setCurrentGuest(null);
+          setInvalidToken(true);
+        }
       } else {
-        setCurrentGuest(null);
-        setInvalidToken(true);
+        setInvalidToken(false);
+        const guests = storage.getGuests();
+        if (guests.length > 0) setCurrentGuest(guests[0]);
       }
-    } else {
-      // Default: If no token provided, set to first demo guest
-      const guests = storage.getGuests();
-      if (guests.length > 0) {
-        setCurrentGuest(guests[0]);
-      }
+    } catch (error) {
+      console.error('Failed to load shared invitation data', error);
+      setRouteLoadError('មិនអាចភ្ជាប់ទៅកាន់ប្រព័ន្ធទិន្នន័យបានទេ។ សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត។');
+    } finally {
+      setIsLoadingRoute(false);
     }
   };
 
   useEffect(() => {
-    syncRouteFromUrl();
+    void syncRouteFromUrl();
     window.addEventListener('popstate', syncRouteFromUrl);
+    if (isSupabaseConfigured && supabase) {
+      void supabase.auth.getSession().then(({ data, error }) => {
+        if (error) {
+          console.error('Failed to restore Supabase admin session', error);
+          return;
+        }
+        setIsAdminLoggedIn(Boolean(data.session));
+      });
+    }
     return () => window.removeEventListener('popstate', syncRouteFromUrl);
   }, []);
 
@@ -71,8 +103,20 @@ export default function App() {
       ? `${window.location.pathname}?token=${currentGuest.token}`
       : window.location.pathname;
     window.history.pushState({}, '', cleanUrl);
-    setConfig(storage.getConfig());
+    if (isSupabaseConfigured) {
+      void fetchPublishedWeddingConfig()
+        .then(publishedConfig => {
+          if (publishedConfig) setConfig(publishedConfig);
+        })
+        .catch(error => console.error('Failed to reload published wedding config', error));
+    } else {
+      setConfig(storage.getConfig());
+    }
   };
+
+  if (isLoadingRoute) {
+    return <div className="min-h-screen bg-[#FAF7F0]" aria-busy="true" />;
+  }
 
   // If Admin View is active
   if (showAdminView) {
@@ -89,6 +133,7 @@ export default function App() {
     return (
       <AdminDashboard
         onLogout={() => {
+          if (supabase) void supabase.auth.signOut();
           storage.logoutAdmin();
           setIsAdminLoggedIn(false);
           handleCloseAdmin();
@@ -99,6 +144,23 @@ export default function App() {
   }
 
   // If Guest token is invalid
+  if (routeLoadError) {
+    return (
+      <div role="alert" className="min-h-screen flex items-center justify-center bg-[#FAF7F0] p-6 text-center">
+        <div className="max-w-md rounded-3xl border border-amber-200 bg-white p-8 shadow-xl">
+          <p className="text-sm text-stone-700">{routeLoadError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            type="button"
+            className="mt-5 rounded-xl bg-[#4A0E17] px-4 py-2.5 text-xs font-semibold text-white"
+          >
+            ព្យាយាមម្តងទៀត
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (invalidToken) {
     return (
       <div className="min-h-screen khmer-pattern-bg flex items-center justify-center p-6 text-center bg-[#FAF7F0] font-kantumruy">

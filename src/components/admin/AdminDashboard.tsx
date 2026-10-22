@@ -20,6 +20,7 @@ import { GuestListTable } from './GuestListTable';
 import { InvitationEditor } from './InvitationEditor';
 import { SettingsPanel } from './SettingsPanel';
 import { GuestWishesManager } from './GuestWishesManager';
+import { fetchAdminGuests, fetchPublishedWeddingConfig, isSupabaseConfigured } from '../../services/supabase';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -31,15 +32,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onView
   const [config, setConfig] = useState<WeddingConfig>(storage.getConfig());
   const [guests, setGuests] = useState<Guest[]>(storage.getGuests());
   const [wishesCount, setWishesCount] = useState<number>(storage.getAllWishes().length);
+  const [dataError, setDataError] = useState('');
 
-  const refreshData = () => {
-    setConfig(storage.getConfig());
-    setGuests(storage.getGuests());
+  const refreshData = async () => {
+    try {
+      if (isSupabaseConfigured) {
+        const [sharedGuests, sharedConfig] = await Promise.all([
+          fetchAdminGuests(),
+          fetchPublishedWeddingConfig(),
+        ]);
+        if (!storage.saveGuests(sharedGuests)) {
+          throw new Error('Could not cache shared guest records in browser storage.');
+        }
+        setGuests(sharedGuests);
+        if (sharedConfig) setConfig(sharedConfig);
+      } else {
+        setConfig(storage.getConfig());
+        setGuests(storage.getGuests());
+      }
+      setDataError('');
+    } catch (error) {
+      console.error('Failed to load shared admin data', error);
+      setDataError('Could not load shared data. Check your Supabase setup and admin access, then reload.');
+    }
     setWishesCount(storage.getAllWishes().length);
   };
 
   useEffect(() => {
-    refreshData();
+    void refreshData();
   }, []);
 
   // Stats Calculations
@@ -135,6 +155,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onView
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+        {!isSupabaseConfigured && (
+          <div role="status" className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            Supabase is not configured. Imported guests and RSVPs stay in this browser, so personal links will not work on guests' phones yet. Follow the setup steps in README.md.
+          </div>
+        )}
+        {dataError && (
+          <div role="alert" className="mb-5 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            {dataError}
+          </div>
+        )}
         {/* STATS OVERVIEW CARDS */}
         <section className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
           {/* Card 1: Total Invited */}

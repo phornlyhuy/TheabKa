@@ -26,6 +26,7 @@ import { WeddingConfig, ScheduleItem, GalleryPhoto, ThemePreset, KhmerFontFamily
 import { storage } from '../../services/storage';
 import { compressImageForStorage } from '../../services/imageUpload';
 import { GuestInvitationView } from '../guest/GuestInvitationView';
+import { isSupabaseConfigured, publishWeddingConfig } from '../../services/supabase';
 
 interface InvitationEditorProps {
   initialConfig: WeddingConfig;
@@ -57,11 +58,20 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
     );
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     const published = storage.publishDraft(config);
     if (!published) {
       showStatus('ផ្សព្វផ្សាយមិនបានទេ។ ទំហំ Browser Storage ពេញ សូមលុបរូបភាពខ្លះ ហើយសាកល្បងម្តងទៀត។', true);
       return;
+    }
+    if (isSupabaseConfigured) {
+      try {
+        await publishWeddingConfig(published);
+      } catch (error) {
+        console.error('Failed to publish wedding config to Supabase', error);
+        showStatus('រក្សាទុកក្នុងឧបករណ៍នេះបាន ប៉ុន្តែមិនអាចផ្សព្វផ្សាយទៅ Database បានទេ។', true);
+        return;
+      }
     }
     setConfig(published);
     onPublish(published);

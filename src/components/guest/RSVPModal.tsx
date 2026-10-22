@@ -3,6 +3,7 @@ import { CheckCircle2, XCircle, Heart, Send, Users, MessageSquare } from 'lucide
 import confetti from 'canvas-confetti';
 import { Guest, Language, RsvpStatus } from '../../types/wedding';
 import { storage } from '../../services/storage';
+import { isSupabaseConfigured, submitRemoteRsvp } from '../../services/supabase';
 
 interface RSVPModalProps {
   guest: Guest;
@@ -21,20 +22,37 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ guest, lang, onRsvpSuccess
   const [wishes, setWishes] = useState<string>(guest.guestWishes || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    const updated = storage.submitRsvp(
-      guest.token,
-      status,
-      status === 'attending' ? attendeesCount : 0,
-      dietary,
-      wishes
-    );
+    setSubmitError('');
+    let updated: Guest | null;
+    try {
+      updated = isSupabaseConfigured
+        ? await submitRemoteRsvp(
+          guest.token,
+          status,
+          status === 'attending' ? attendeesCount : 0,
+          dietary,
+          wishes,
+        )
+        : storage.submitRsvp(
+          guest.token,
+          status,
+          status === 'attending' ? attendeesCount : 0,
+          dietary,
+          wishes,
+        );
+    } catch (error) {
+      console.error('Failed to save guest RSVP', error);
+      setSubmitError('មិនអាចរក្សាទុកការឆ្លើយតបបានទេ។ សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត។');
+      setIsSubmitting(false);
+      return;
+    }
 
     if (updated) {
       if (status === 'attending') {
@@ -57,6 +75,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ guest, lang, onRsvpSuccess
       }, 1800);
     } else {
       setIsSubmitting(false);
+      setSubmitError('តំណភ្ជាប់នេះមិនសកម្មទៀតទេ។ សូមទាក់ទងម្ចាស់កម្មវិធី។');
     }
   };
 
@@ -99,6 +118,11 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ guest, lang, onRsvpSuccess
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5">
+            {submitError && (
+              <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-xs text-rose-800">
+                {submitError}
+              </div>
+            )}
             {/* Status Selection */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">

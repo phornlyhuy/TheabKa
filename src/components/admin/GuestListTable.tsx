@@ -24,6 +24,7 @@ import { compressImageForStorage } from '../../services/imageUpload';
 import { GuestQrModal } from './GuestQrModal';
 import { CsvImportModal } from './CsvImportModal';
 import { getInvitationUrl } from '../../services/invitationLinks';
+import { deleteAdminGuest, isSupabaseConfigured, saveAdminGuests } from '../../services/supabase';
 
 interface GuestListTableProps {
   guests: Guest[];
@@ -49,10 +50,14 @@ export const GuestListTable: React.FC<GuestListTableProps> = ({ guests, onGuests
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const persistSharedGuests = async () => {
+    if (isSupabaseConfigured) await saveAdminGuests(storage.getGuests());
+  };
+
   const handleCopyLink = (guest: Guest) => {
     const url = getInvitationUrl(guest.token);
     if (!url) {
-      showToast('សូមដាក់វេបសាយលើ URL សាធារណៈ HTTPS ជាមុនសិន ទើបអាចចម្លង Link សម្រាប់ភ្ញៀវបាន។');
+      showToast('សូមកំណត់ Supabase និងផ្សព្វផ្សាយវេបសាយលើ URL សាធារណៈ HTTPS ជាមុនសិន។');
       return;
     }
     navigator.clipboard.writeText(url);
@@ -64,7 +69,7 @@ export const GuestListTable: React.FC<GuestListTableProps> = ({ guests, onGuests
   const handleShareTelegram = (guest: Guest) => {
     const url = getInvitationUrl(guest.token);
     if (!url) {
-      showToast('សូមដាក់វេបសាយលើ URL សាធារណៈ HTTPS ជាមុនសិន ទើបអាចផ្ញើ Link ទៅភ្ញៀវបាន។');
+      showToast('សូមកំណត់ Supabase និងផ្សព្វផ្សាយវេបសាយលើ URL សាធារណៈ HTTPS ជាមុនសិន។');
       return;
     }
     const text = `សូមគោរពអញ្ជើញ ភ្ញៀវកិត្តិយស ${guest.nameKm} ចូលរួមពិធីមង្គលការ ${coupleNames} (ថ្ងៃអាទិត្យ ទី ២២ ខែ វិច្ឆិកា ឆ្នាំ ២០២៦)។ សូមចុចតំណភ្ជាប់ខាងក្រោមដើម្បីបើកមើលធៀបការឌីជីថលផ្ទាល់ខ្លួន៖\n${url}`;
@@ -72,23 +77,44 @@ export const GuestListTable: React.FC<GuestListTableProps> = ({ guests, onGuests
     window.open(telegramUrl, '_blank');
   };
 
-  const handleToggleActive = (guest: Guest) => {
+  const handleToggleActive = async (guest: Guest) => {
     const newStatus = storage.toggleGuestActive(guest.id);
+    try {
+      await persistSharedGuests();
+    } catch (error) {
+      console.error('Failed to sync guest status', error);
+      showToast('Could not save guest link status to the shared database.');
+      return;
+    }
     onGuestsUpdated();
     showToast(newStatus ? `បានបើកដំណើរការ Link សម្រាប់ ${guest.nameKm}` : `បានបិទដំណើរការ Link សម្រាប់ ${guest.nameKm}`);
   };
 
-  const handleRegenerateToken = (guest: Guest) => {
+  const handleRegenerateToken = async (guest: Guest) => {
     if (window.confirm(`តើអ្នកពិតជាចង់បង្កើត Link ថ្មីសម្រាប់ ${guest.nameKm}? តំណភ្ជាប់ចាស់នឹងត្រូវផុតសុពលភាព។`)) {
       storage.regenerateToken(guest.id);
+      try {
+        await persistSharedGuests();
+      } catch (error) {
+        console.error('Failed to sync regenerated guest link', error);
+        showToast('Could not save the new guest link to the shared database.');
+        return;
+      }
       onGuestsUpdated();
       showToast(`បានបង្កើត Token ថ្មីជោគជ័យ!`);
     }
   };
 
-  const handleDelete = (guest: Guest) => {
+  const handleDelete = async (guest: Guest) => {
     if (window.confirm(`តើអ្នកប្រាកដជាចង់លុប ${guest.nameKm} ចេញពីបញ្ជីភ្ញៀវ?`)) {
       storage.deleteGuest(guest.id);
+      try {
+        if (isSupabaseConfigured) await deleteAdminGuest(guest.id);
+      } catch (error) {
+        console.error('Failed to delete shared guest', error);
+        showToast('Could not delete the guest from the shared database.');
+        return;
+      }
       onGuestsUpdated();
       showToast(`បានលុប ${guest.nameKm} រួចរាល់!`);
     }
@@ -292,7 +318,7 @@ export const GuestListTable: React.FC<GuestListTableProps> = ({ guests, onGuests
                             ) : (
                               <span
                                 className="p-1.5 rounded-lg bg-stone-100 text-stone-400"
-                                title="ត្រូវផ្សព្វផ្សាយវេបសាយលើ URL សាធារណៈ HTTPS ជាមុនសិន"
+                                title="ត្រូវកំណត់ Supabase និង URL សាធារណៈ HTTPS ជាមុនសិន"
                               >
                                 <ExternalLink className="w-3.5 h-3.5" />
                               </span>
@@ -367,7 +393,14 @@ export const GuestListTable: React.FC<GuestListTableProps> = ({ guests, onGuests
             setIsAddModalOpen(false);
             setEditingGuest(null);
           }}
-          onSave={() => {
+          onSave={async () => {
+            try {
+              await persistSharedGuests();
+            } catch (error) {
+              console.error('Failed to sync guest changes', error);
+              showToast('Could not save guest changes to the shared database.');
+              return;
+            }
             setIsAddModalOpen(false);
             setEditingGuest(null);
             onGuestsUpdated();
@@ -402,7 +435,7 @@ interface GuestFormModalProps {
   isOpen: boolean;
   guest: Guest | null;
   onClose: () => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
 }
 
 const GuestFormModal: React.FC<GuestFormModalProps> = ({ isOpen, guest, onClose, onSave }) => {
@@ -433,7 +466,7 @@ const GuestFormModal: React.FC<GuestFormModalProps> = ({ isOpen, guest, onClose,
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nameKm.trim()) return;
 
@@ -464,7 +497,7 @@ const GuestFormModal: React.FC<GuestFormModalProps> = ({ isOpen, guest, onClose,
       return;
     }
 
-    onSave();
+    await onSave();
   };
 
   return (
