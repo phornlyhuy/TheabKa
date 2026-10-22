@@ -248,7 +248,11 @@ export const storage = {
     // Wishes stored on guests
     const guests = this.getGuests();
     guests.forEach(g => {
-      if (g.guestWishes && g.guestWishes.trim().length > 0) {
+      if (
+        g.guestWishes
+        && g.guestWishes.trim().length > 0
+        && !g.token.startsWith('km_honored_')
+      ) {
         list.push({
           id: 'wish_g_' + g.id,
           guestName: `${g.honorificKm} ${g.nameKm}`.trim(),
@@ -284,17 +288,35 @@ export const storage = {
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   },
 
+  deleteWish(id: string): boolean {
+    if (id.startsWith('wish_g_')) {
+      const guestId = id.slice('wish_g_'.length);
+      return Boolean(this.updateGuest(guestId, { guestWishes: '' }));
+    }
+
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.CUSTOM_WISHES);
+      const extra: Array<{ id?: string }> = stored ? JSON.parse(stored) : [];
+      const filtered = extra.filter(item => item.id !== id);
+      if (filtered.length === extra.length) return false;
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_WISHES, JSON.stringify(filtered));
+      return true;
+    } catch (e) {
+      console.error('Failed to delete wish', e);
+      return false;
+    }
+  },
+
   submitGuestWish(message: string, guest?: Guest | null, authorName?: string): boolean {
     if (!message || !message.trim()) return false;
     const trimmed = message.trim();
 
     if (guest && guest.token) {
-      this.updateGuest(guest.id, {
+      const updated = this.updateGuest(guest.id, {
         guestWishes: trimmed,
-        rsvpStatus: 'attending',
         rsvpSubmittedAt: new Date().toISOString(),
       });
-      return true;
+      return Boolean(updated);
     }
 
     // Public / generic wish

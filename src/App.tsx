@@ -66,8 +66,12 @@ export default function App() {
         }
       } else {
         setInvalidToken(false);
-        const guests = storage.getGuests();
-        if (guests.length > 0) setCurrentGuest(guests[0]);
+        if (isSupabaseConfigured) {
+          setCurrentGuest(null);
+        } else {
+          const guests = storage.getGuests();
+          if (guests.length > 0) setCurrentGuest(guests[0]);
+        }
       }
     } catch (error) {
       console.error('Failed to load shared invitation data', error);

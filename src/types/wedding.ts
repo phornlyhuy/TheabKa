@@ -131,6 +131,14 @@ export interface GuestWish {
   createdAt: string;
 }
 
+export interface WeddingWish {
+  id: string;
+  guestName: string;
+  message: string;
+  date: string;
+  photoUrl?: string;
+}
+
 export interface Guest {
   id: string;
   token: string; // Cryptographic secure random token for public personalized link

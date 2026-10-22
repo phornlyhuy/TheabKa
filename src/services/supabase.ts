@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Guest, WeddingConfig } from '../types/wedding';
+import { Guest, WeddingConfig, WeddingWish } from '../types/wedding';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
@@ -82,4 +82,46 @@ export async function submitRemoteRsvp(
   });
   if (error) throw error;
   return data as Guest | null;
+}
+
+function mapWish(row: {
+  id: string;
+  guest_name: string;
+  message: string;
+  created_at: string;
+}): WeddingWish {
+  return {
+    id: row.id,
+    guestName: row.guest_name,
+    message: row.message,
+    date: row.created_at,
+  };
+}
+
+export async function fetchPublicWishes(): Promise<WeddingWish[]> {
+  const { data, error } = await requireSupabase().rpc('get_public_wedding_wishes');
+  if (error) throw error;
+  return (data || []).map(mapWish);
+}
+
+export async function fetchAdminWishes(): Promise<WeddingWish[]> {
+  const { data, error } = await requireSupabase()
+    .from('wedding_wishes')
+    .select('id,guest_name,message,created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(mapWish);
+}
+
+export async function submitRemoteWish(token: string | null, message: string): Promise<void> {
+  const { error } = await requireSupabase().rpc('submit_guest_wish', {
+    p_token: token,
+    p_message: message,
+  });
+  if (error) throw error;
+}
+
+export async function deleteAdminWish(id: string): Promise<void> {
+  const { error } = await requireSupabase().from('wedding_wishes').delete().eq('id', id);
+  if (error) throw error;
 }

@@ -20,7 +20,12 @@ import { GuestListTable } from './GuestListTable';
 import { InvitationEditor } from './InvitationEditor';
 import { SettingsPanel } from './SettingsPanel';
 import { GuestWishesManager } from './GuestWishesManager';
-import { fetchAdminGuests, fetchPublishedWeddingConfig, isSupabaseConfigured } from '../../services/supabase';
+import {
+  fetchAdminGuests,
+  fetchAdminWishes,
+  fetchPublishedWeddingConfig,
+  isSupabaseConfigured,
+} from '../../services/supabase';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -31,31 +36,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onView
   const [activeTab, setActiveTab] = useState<'guests' | 'wishes' | 'editor' | 'settings'>('guests');
   const [config, setConfig] = useState<WeddingConfig>(storage.getConfig());
   const [guests, setGuests] = useState<Guest[]>(storage.getGuests());
-  const [wishesCount, setWishesCount] = useState<number>(storage.getAllWishes().length);
+  const [wishesCount, setWishesCount] = useState<number>(
+    isSupabaseConfigured ? 0 : storage.getAllWishes().length,
+  );
   const [dataError, setDataError] = useState('');
 
   const refreshData = async () => {
     try {
       if (isSupabaseConfigured) {
-        const [sharedGuests, sharedConfig] = await Promise.all([
+        const [sharedGuests, sharedConfig, sharedWishes] = await Promise.all([
           fetchAdminGuests(),
           fetchPublishedWeddingConfig(),
+          fetchAdminWishes(),
         ]);
         if (!storage.saveGuests(sharedGuests)) {
           throw new Error('Could not cache shared guest records in browser storage.');
         }
         setGuests(sharedGuests);
         if (sharedConfig) setConfig(sharedConfig);
+        setWishesCount(sharedWishes.length);
       } else {
         setConfig(storage.getConfig());
         setGuests(storage.getGuests());
+        setWishesCount(storage.getAllWishes().length);
       }
       setDataError('');
     } catch (error) {
       console.error('Failed to load shared admin data', error);
       setDataError('Could not load shared data. Check your Supabase setup and admin access, then reload.');
     }
-    setWishesCount(storage.getAllWishes().length);
   };
 
   useEffect(() => {

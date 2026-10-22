@@ -18,12 +18,17 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
-import { Guest, WeddingConfig, Language } from '../../types/wedding';
+import { Guest, WeddingConfig, Language, WeddingWish } from '../../types/wedding';
 import { KhmerDivider, KhmerCorner, KhmerRoyalCrest, DamaskCornerOrnament } from '../common/KhmerOrnament';
 import { CountdownTimer } from './CountdownTimer';
 import { AddToCalendarButton } from './AddToCalendarButton';
 import { GalleryLightbox } from './GalleryLightbox';
 import { storage } from '../../services/storage';
+import {
+  fetchPublicWishes,
+  isSupabaseConfigured,
+  submitRemoteWish,
+} from '../../services/supabase';
 
 interface GuestInvitationViewProps {
   config: WeddingConfig;
@@ -45,14 +50,44 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
   const [wishText, setWishText] = useState(currentGuest?.guestWishes || '');
   const [isSubmittingWish, setIsSubmittingWish] = useState(false);
   const [wishSentSuccess, setWishSentSuccess] = useState(false);
-  const [wishesList, setWishesList] = useState(storage.getAllWishes());
+  const [wishError, setWishError] = useState('');
+  const [wishesList, setWishesList] = useState<WeddingWish[]>(
+    isSupabaseConfigured && !isPreview ? [] : storage.getAllWishes(),
+  );
 
   useEffect(() => {
     setCurrentGuest(guest);
-    if (guest?.guestWishes) {
-      setWishText(guest.guestWishes);
-    }
+    setWishText(guest?.guestWishes || '');
   }, [guest]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadWishes = async () => {
+      if (!config.showWishesWall) {
+        setWishesList([]);
+        return;
+      }
+      if (isSupabaseConfigured && !isPreview) {
+        try {
+          const wishes = await fetchPublicWishes();
+          if (isMounted) {
+            setWishesList(wishes);
+            setWishError('');
+          }
+        } catch (error) {
+          console.error('Failed to load guest wishes', error);
+          if (isMounted) setWishError('មិនអាចផ្ទុកសារជូនពរបានទេ។ សូមព្យាយាមម្តងទៀត។');
+        }
+      } else if (isMounted) {
+        setWishesList(storage.getAllWishes());
+      }
+    };
+
+    void loadWishes();
+    return () => {
+      isMounted = false;
+    };
+  }, [config.showWishesWall, isPreview]);
 
   // Generate QR code for location or gift
   useEffect(() => {
@@ -73,29 +108,40 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
   };
 
   // Submit wish directly on page as shown in screenshot
-  const handleSubmitWish = (e: React.FormEvent) => {
+  const handleSubmitWish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wishText.trim()) return;
 
     setIsSubmittingWish(true);
-    storage.submitGuestWish(wishText.trim(), currentGuest, currentGuest ? `${currentGuest.honorificKm} ${currentGuest.nameKm}` : undefined);
-
     try {
-      confetti({
-        particleCount: 90,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#c59b27', '#4A0E17', '#f6e27a', '#ffffff'],
-      });
-    } catch (_) {}
+      if (isSupabaseConfigured && !isPreview) {
+        await submitRemoteWish(currentGuest?.token || null, wishText.trim());
+        setWishesList(await fetchPublicWishes());
+      } else if (!storage.submitGuestWish(wishText.trim(), currentGuest)) {
+        throw new Error('Could not save the wish in browser storage.');
+      } else {
+        setWishesList(storage.getAllWishes());
+      }
 
-    setWishSentSuccess(true);
-    setIsSubmittingWish(false);
-    setWishesList(storage.getAllWishes());
-
-    setTimeout(() => {
-      setWishSentSuccess(false);
-    }, 4000);
+      try {
+        confetti({
+          particleCount: 90,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#c59b27', '#4A0E17', '#f6e27a', '#ffffff'],
+        });
+      } catch (error) {
+        console.error('Could not display wish confirmation animation', error);
+      }
+      setWishError('');
+      setWishSentSuccess(true);
+      setTimeout(() => setWishSentSuccess(false), 4000);
+    } catch (error) {
+      console.error('Failed to submit guest wish', error);
+      setWishError('មិនអាចរក្សាទុកសារបានទេ។ សូមពិនិត្យអ៊ីនធឺណិត ហើយព្យាយាមម្ដងទៀត។');
+    } finally {
+      setIsSubmittingWish(false);
+    }
   };
 
   // If link is deactivated and not in admin preview
@@ -457,6 +503,7 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
         )}
 
         {/* SECTION 9: SEND WISH FORM (Exactly Matching User Reference Photo) */}
+        {(currentGuest || isPreview || !isSupabaseConfigured) && (
         <section id="wishes-form-section" className="wedding-card-glass rounded-3xl p-6 sm:p-8 relative bg-white shadow-xl border border-stone-200">
           <form onSubmit={handleSubmitWish} className="space-y-4">
             <div className="flex items-center justify-between">
@@ -492,6 +539,12 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
               </div>
             )}
 
+            {wishError && (
+              <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-xs text-rose-800">
+                {wishError}
+              </div>
+            )}
+
             {/* Deep Burgundy Button exactly as shown in screenshot */}
             <button
               type="submit"
@@ -503,6 +556,7 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
             </button>
           </form>
         </section>
+        )}
 
         {/* SECTION 10: GIFT / KHQR CARD (Matching User Reference Photo) */}
         {config.giftEnabled && (
@@ -560,7 +614,7 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
         )}
 
         {/* SECTION 11: DIGITAL GUESTBOOK / BLESSINGS WALL (Where to view guest wishes) */}
-        {config.showWishesWall && (
+        {config.showWishesWall && wishesList.length > 0 && (
           <section id="wishes-wall-section" className="wedding-card-glass rounded-2xl sm:rounded-3xl p-4 sm:p-10 relative bg-white/95 shadow-xl border border-amber-200/80">
             <div className="text-center mb-6">
               <span className="text-xs uppercase tracking-widest text-[#4A0E17] font-semibold">
@@ -576,12 +630,7 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
             </div>
 
             <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
-              {wishesList.length === 0 ? (
-                <div className="p-8 text-center text-stone-400 text-xs">
-                  មិនទាន់មានពាក្យជូនពរនៅឡើយទេ។ សូមសរសេរពាក្យជូនពរដំបូងគេ!
-                </div>
-              ) : (
-                wishesList.map((w) => (
+              {wishesList.map((w) => (
                   <div
                     key={w.id}
                     className="p-4 rounded-2xl bg-[#FAF7F0] border border-[#e8dfcf] hover:border-amber-300 transition-colors"
@@ -611,8 +660,7 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
                       "{w.message}"
                     </p>
                   </div>
-                ))
-              )}
+                ))}
             </div>
           </section>
         )}
@@ -624,7 +672,13 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
           </p>
           <p>
             {lang === 'km'
-              ? 'សូមថ្លែងអំណរគុណយ៉ាងជ្រាលជ្រៅចំពោះវត្តមាន និងពរជ័យដ៏ឧត្តុង្គឧត្តម'
+              ? `សូមថ្លែងអំណរគុណយ៉ាងជ្រាលជ្រៅចំពោះវត្តមាន និងពរជ័យដ៏ឧត្តុង្គឧត្តម!
+
+ពួកយើងខ្ញុំទាំងពីរនាក់ សូមសម្តែងនូវសេចក្តីសោមនស្សរីករាយ និងអរគុណយ៉ាងជ្រាលជ្រៅបំផុតចំពោះ ឯកឧត្តម លោកជំទាវ លោក លោកស្រី អ្នកនាងកញ្ញា ព្រមទាំងប្រិយមិត្តសាច់ញាតិមិត្តភក្តិទាំងអស់ ដែលបានចំណាយពេលវេលាដ៏មានតម្លៃ និងអញ្ជើញចូលរួមផ្តល់កិត្តិយស ព្រមទាំងប្រសិទ្ធពរជ័យក្នុងពិធីមង្គលការរបស់យើងខ្ញុំ។
+
+ប្រសិនបើមានការខុសឆ្គង ឬចន្លោះប្រហោងដោយប្រការណាមួយក្នុងកិច្ចទទួលរាក់ទាក់ ពួកយើងខ្ញុំសូមខន្តីអភ័យទោសពីចម្ងាយផងដែរ។
+
+សូមជូនពរលោកអ្នក និងគ្រួសារ ជួបតែសេចក្តីសុខ សុភមង្គល និងជោគជ័យគ្រប់ភារកិច្ច! ❤️🥂`
               : 'Warmest gratitude for your esteemed presence and heartfelt blessings'}
           </p>
         </footer>

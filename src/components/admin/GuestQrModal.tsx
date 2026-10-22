@@ -13,16 +13,23 @@ interface GuestQrModalProps {
 export const GuestQrModal: React.FC<GuestQrModalProps> = ({ guest, isOpen, onClose }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [qrError, setQrError] = useState('');
 
   useEffect(() => {
+    let isCurrent = true;
+    setQrDataUrl('');
+    setQrError('');
     if (!guest) {
-      setQrDataUrl('');
-      return;
+      return () => {
+        isCurrent = false;
+      };
     }
     const personalUrl = getInvitationUrl(guest.token);
     if (!personalUrl) {
-      setQrDataUrl('');
-      return;
+      setQrError('សូមកំណត់ Supabase និង URL សាធារណៈ HTTPS ជាមុនសិន។');
+      return () => {
+        isCurrent = false;
+      };
     }
 
     QRCode.toDataURL(personalUrl, {
@@ -32,7 +39,17 @@ export const GuestQrModal: React.FC<GuestQrModalProps> = ({ guest, isOpen, onClo
         dark: '#4A0E17',
         light: '#ffffff',
       },
-    }).then(setQrDataUrl).catch(console.error);
+    })
+      .then(dataUrl => {
+        if (isCurrent) setQrDataUrl(dataUrl);
+      })
+      .catch(error => {
+        console.error('Failed to generate guest QR code', error);
+        if (isCurrent) setQrError('មិនអាចបង្កើត QR Code បានទេ។ សូមសាកល្បងម្ដងទៀត។');
+      });
+    return () => {
+      isCurrent = false;
+    };
   }, [guest]);
 
   if (!isOpen || !guest) return null;
@@ -41,9 +58,15 @@ export const GuestQrModal: React.FC<GuestQrModalProps> = ({ guest, isOpen, onClo
 
   const handleCopy = () => {
     if (!personalUrl) return;
-    navigator.clipboard.writeText(personalUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+    void navigator.clipboard.writeText(personalUrl)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      })
+      .catch(error => {
+        console.error('Failed to copy guest invitation link', error);
+        setQrError('មិនអាចចម្លង Link បានទេ។ សូមប្រើ HTTPS ហើយពិនិត្យសិទ្ធិ Clipboard។');
+      });
   };
 
   const handleDownload = () => {
@@ -100,7 +123,7 @@ export const GuestQrModal: React.FC<GuestQrModalProps> = ({ guest, isOpen, onClo
           ) : (
             <div className="w-48 h-48 flex items-center justify-center p-3 text-xs text-stone-600 leading-relaxed">
               {personalUrl
-                ? 'កំពុងបង្កើត QR Code...'
+                ? (qrError || 'កំពុងបង្កើត QR Code...')
                 : 'សូមកំណត់ Supabase និងផ្សព្វផ្សាយវេបសាយលើ URL សាធារណៈ HTTPS ជាមុនសិន។ QR ពី localhost មិនអាចបើកលើទូរស័ព្ទភ្ញៀវបានទេ។'}
             </div>
           )}

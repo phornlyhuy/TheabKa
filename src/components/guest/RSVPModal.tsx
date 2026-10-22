@@ -213,6 +213,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ guest, lang, onRsvpSuccess
               </label>
               <textarea
                 rows={3}
+                maxLength={1000}
                 value={wishes}
                 onChange={(e) => setWishes(e.target.value)}
                 placeholder={lang === 'km' ? 'សូមសរសេរពាក្យជូនពរនៅទីនេះ...' : 'Write your warm blessings for the newlyweds...'}

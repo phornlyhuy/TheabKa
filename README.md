@@ -40,3 +40,5 @@ The app can use Supabase so guest records imported by an admin are available to 
 Guest lists imported before Supabase is configured exist only in that browser. Export that list to CSV first, connect Supabase, then import it again. Wedding changes must be published from the editor to be visible to guests.
 
 Without Supabase environment variables, the app keeps using browser-local storage. In that mode, guest records and RSVP responses do not sync between devices.
+
+If Supabase was already set up before guest wishes were added, run the updated [`supabase/setup.sql`](./supabase/setup.sql) again in the SQL Editor after deploying. The setup safely recreates its policies and adds shared wish storage and admin delete permissions. Guest messages are accepted only from active personalized invitation links; the wishes wall stays hidden until a real message has been submitted.

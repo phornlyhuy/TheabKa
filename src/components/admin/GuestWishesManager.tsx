@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Heart,
   MessageSquare,
@@ -8,20 +8,43 @@ import {
   Download,
   Calendar,
   Sparkles,
-  UserCheck,
-  Share2
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { storage } from '../../services/storage';
+import { WeddingWish } from '../../types/wedding';
+import {
+  deleteAdminWish,
+  fetchAdminWishes,
+  isSupabaseConfigured,
+} from '../../services/supabase';
 
 interface GuestWishesManagerProps {
-  onRefresh?: () => void;
+  onRefresh?: () => void | Promise<void>;
 }
 
 export const GuestWishesManager: React.FC<GuestWishesManagerProps> = ({ onRefresh }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [wishes, setWishes] = useState<WeddingWish[]>(
+    isSupabaseConfigured ? [] : storage.getAllWishes(),
+  );
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
 
-  const wishes = storage.getAllWishes();
+  const refreshWishes = async () => {
+    try {
+      setWishes(isSupabaseConfigured ? await fetchAdminWishes() : storage.getAllWishes());
+      setLoadError('');
+    } catch (error) {
+      console.error('Failed to load guest wishes in admin', error);
+      setLoadError('មិនអាចផ្ទុកសារពី Database បានទេ។ សូមពិនិត្យ SQL setup និងសិទ្ធិ Admin។');
+    }
+  };
+
+  useEffect(() => {
+    void refreshWishes();
+  }, []);
 
   const filteredWishes = wishes.filter(w =>
     w.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,9 +52,37 @@ export const GuestWishesManager: React.FC<GuestWishesManagerProps> = ({ onRefres
   );
 
   const handleCopyWish = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    void navigator.clipboard.writeText(text)
+      .then(() => {
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2000);
+      })
+      .catch(error => {
+        console.error('Failed to copy guest wish', error);
+        setActionError('មិនអាចចម្លងសារបានទេ។');
+      });
+  };
+
+  const handleDeleteWish = async (wish: WeddingWish) => {
+    if (!window.confirm(`តើអ្នកចង់លុបសាររបស់ ${wish.guestName} មែនទេ?`)) return;
+    setActionError('');
+    try {
+      if (isSupabaseConfigured) {
+        await deleteAdminWish(wish.id);
+      } else if (!storage.deleteWish(wish.id)) {
+        throw new Error('Wish was not found in local storage.');
+      }
+      await refreshWishes();
+      await onRefresh?.();
+    } catch (error) {
+      console.error('Failed to delete guest wish', error);
+      setActionError('មិនអាចលុបសារបានទេ។ សូមពិនិត្យការតភ្ជាប់ និងសិទ្ធិ Admin។');
+    }
+  };
+
+  const handleRefresh = async () => {
+    await refreshWishes();
+    await onRefresh?.();
   };
 
   const handleExportWishes = () => {
@@ -80,6 +131,12 @@ export const GuestWishesManager: React.FC<GuestWishesManagerProps> = ({ onRefres
             </p>
           </div>
 
+          {(loadError || actionError) && (
+            <div role="alert" className="rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              {actionError || loadError}
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
             <div className="px-5 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-center">
               <div className="text-2xl sm:text-3xl font-bold font-moul text-amber-300">
@@ -87,6 +144,15 @@ export const GuestWishesManager: React.FC<GuestWishesManagerProps> = ({ onRefres
               </div>
               <div className="text-[11px] text-amber-100 font-kantumruy">សារជូនពរសរុប</div>
             </div>
+
+            <button
+              onClick={() => void handleRefresh()}
+              type="button"
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs sm:text-sm border border-white/20 transition-all cursor-pointer whitespace-nowrap"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>ធ្វើបច្ចុប្បន្នភាព</span>
+            </button>
 
             <button
               onClick={handleExportWishes}
@@ -127,7 +193,7 @@ export const GuestWishesManager: React.FC<GuestWishesManagerProps> = ({ onRefres
           <MessageSquare className="w-12 h-12 text-stone-300 mx-auto mb-3" />
           <h3 className="font-moul text-base text-stone-700">មិនទាន់មានពាក្យជូនពរត្រូវនឹងការស្វែងរកទេ</h3>
           <p className="text-xs text-stone-500 font-kantumruy mt-1">
-            ភ្ញៀវអាចសរសេរពាក្យជូនពរតាមរយៈតំណភ្ជាប់ធៀបការ ឬប្រអប់សារលើទំព័រមុខ
+            សារពិតពីភ្ញៀវនឹងបង្ហាញនៅទីនេះ បន្ទាប់ពីពួកគេផ្ញើតាមតំណភ្ជាប់ធៀបការ
           </p>
         </div>
       ) : (
@@ -154,14 +220,25 @@ export const GuestWishesManager: React.FC<GuestWishesManagerProps> = ({ onRefres
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleCopyWish(item.id, `"${item.message}" - ${item.guestName}`)}
-                    type="button"
-                    className="p-2 rounded-xl bg-stone-50 hover:bg-amber-50 text-stone-500 hover:text-amber-800 border border-stone-200 transition-colors cursor-pointer"
-                    title="ចម្លងសារនេះ"
-                  >
-                    {copiedId === item.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleCopyWish(item.id, `"${item.message}" - ${item.guestName}`)}
+                      type="button"
+                      className="p-2 rounded-xl bg-stone-50 hover:bg-amber-50 text-stone-500 hover:text-amber-800 border border-stone-200 transition-colors cursor-pointer"
+                      title="ចម្លងសារនេះ"
+                    >
+                      {copiedId === item.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => void handleDeleteWish(item)}
+                      type="button"
+                      className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
+                      title="លុបសារនេះ"
+                      aria-label={`លុបសាររបស់ ${item.guestName}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Blessing message text */}
