@@ -59,23 +59,44 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
   };
 
   const handlePublish = async () => {
-    const published = storage.publishDraft(config);
-    if (!published) {
-      showStatus('ផ្សព្វផ្សាយមិនបានទេ។ ទំហំ Browser Storage ពេញ សូមលុបរូបភាពខ្លះ ហើយសាកល្បងម្តងទៀត។', true);
-      return;
-    }
+    const published: WeddingConfig = {
+      ...config,
+      isPublished: true,
+      publishedAt: new Date().toISOString(),
+      lastSavedAt: new Date().toISOString(),
+    };
+    let cacheWarning = false;
+
     if (isSupabaseConfigured) {
       try {
         await publishWeddingConfig(published);
       } catch (error) {
         console.error('Failed to publish wedding config to Supabase', error);
-        showStatus('រក្សាទុកក្នុងឧបករណ៍នេះបាន ប៉ុន្តែមិនអាចផ្សព្វផ្សាយទៅ Database បានទេ។', true);
+        showStatus('ផ្សព្វផ្សាយមិនបានទេ។ សូមពិនិត្យការភ្ជាប់ និងសិទ្ធិ Admin រួចសាកល្បងម្តងទៀត។', true);
         return;
       }
+
+      const configCached = storage.saveConfig(published);
+      const draftCached = storage.saveDraftConfig(published);
+      cacheWarning = !configCached || !draftCached;
+      if (cacheWarning) {
+        console.warn('Wedding config was published, but could not be cached in browser storage.');
+      }
+    } else if (!storage.publishDraft(config)) {
+      showStatus('ផ្សព្វផ្សាយមិនបានទេ។ ទំហំ Browser Storage ពេញ សូមលុបរូបភាពខ្លះ ហើយសាកល្បងម្តងទៀត។', true);
+      return;
     }
+
     setConfig(published);
     onPublish(published);
-    showStatus('បានផ្សព្វផ្សាយជាផ្លូវការ (Published to Live Guests)!');
+    showStatus(
+      cacheWarning
+        ? 'បានផ្សព្វផ្សាយទៅភ្ញៀវហើយ ប៉ុន្តែ Browser Storage ពេញ។'
+        : isSupabaseConfigured
+          ? 'បានផ្សព្វផ្សាយជាផ្លូវការ (Published to Live Guests)!'
+          : 'បានផ្សព្វផ្សាយជាផ្លូវការ (Published)!',
+      cacheWarning,
+    );
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'coverImage' | 'giftQrImage') => {
@@ -393,7 +414,8 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
                         <input
                           type="text"
                           value={config.groomNameKm}
-                          onChange={(e) => setConfig({ ...config, groomNameKm: e.target.value })}
+                          onChange={(e) => setConfig(prev => ({ ...prev, groomNameKm: e.target.value }))}
+                          autoComplete="off"
                           className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold"
                         />
                       </div>
@@ -403,7 +425,8 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
                       <input
                         type="text"
                         value={config.groomNameEn}
-                        onChange={(e) => setConfig({ ...config, groomNameEn: e.target.value })}
+                        onChange={(e) => setConfig(prev => ({ ...prev, groomNameEn: e.target.value }))}
+                        autoComplete="off"
                         className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
                       />
                     </div>
@@ -429,7 +452,8 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
                         <input
                           type="text"
                           value={config.brideNameKm}
-                          onChange={(e) => setConfig({ ...config, brideNameKm: e.target.value })}
+                          onChange={(e) => setConfig(prev => ({ ...prev, brideNameKm: e.target.value }))}
+                          autoComplete="off"
                           className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold"
                         />
                       </div>
@@ -439,7 +463,8 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
                       <input
                         type="text"
                         value={config.brideNameEn}
-                        onChange={(e) => setConfig({ ...config, brideNameEn: e.target.value })}
+                        onChange={(e) => setConfig(prev => ({ ...prev, brideNameEn: e.target.value }))}
+                        autoComplete="off"
                         className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
                       />
                     </div>
