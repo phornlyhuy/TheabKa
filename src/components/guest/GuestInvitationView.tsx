@@ -331,12 +331,25 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
               <span className="inline-block px-3 py-1 rounded-full bg-amber-200/80 text-[#4A0E17] text-xs font-semibold mb-3">
                 {lang === 'km' ? 'មាតាបិតាខាងប្រុស' : "Groom's Parents"}
               </span>
-              <p className="text-sm font-semibold text-stone-800">
-                {lang === 'km' ? `លោក សុិន រ៉ា` : `Mr. Sin Ra`}
-              </p>
-              <p className="text-xs text-amber-800 mt-0.5">
-                (លោកឪពុកខាងប្រុស)
-              </p>
+              {config.groomFatherKm.trim() && (
+                <p className="text-sm font-semibold text-stone-800">
+                  {lang === 'km'
+                    ? `លោក ${config.groomFatherKm}`
+                    : `${config.groomFatherEn.trim() ? 'Mr. ' : ''}${config.groomFatherEn || config.groomFatherKm}`}
+                </p>
+              )}
+              {config.groomMotherKm.trim() && (
+                <p className="text-sm font-semibold text-stone-800 mt-1">
+                  {lang === 'km'
+                    ? `អ្នកម្តាយ ${config.groomMotherKm}`
+                    : `${config.groomMotherEn.trim() ? 'Mrs. ' : ''}${config.groomMotherEn || config.groomMotherKm}`}
+                </p>
+              )}
+              {(config.groomFatherKm.trim() || config.groomMotherKm.trim()) && (
+                <p className="text-xs text-amber-800 mt-0.5">
+                  {lang === 'km' ? '(មាតាបិតាខាងប្រុស)' : "(Groom's parents)"}
+                </p>
+              )}
 
               <div className="mt-4 pt-3 border-t border-amber-200/70">
                 <p className="text-xs text-[#4A0E17] font-semibold uppercase">
@@ -356,14 +369,26 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
               <span className="inline-block px-3 py-1 rounded-full bg-amber-200/80 text-[#4A0E17] text-xs font-semibold mb-3">
                 {lang === 'km' ? 'មាតាបិតាខាងស្រី' : "Bride's Parents"}
               </span>
-              <p className="text-sm font-semibold text-stone-800">
-                {lang === 'km' ? `លោក អ៊ុំ ភ័ណ្ឌ` : `Mr. Oum Phorn`}
-                <span className="text-xs text-amber-800 ml-1 font-normal">(លោកឪពុកខាងស្រី)</span>
-              </p>
-              <p className="text-sm font-semibold text-stone-800 mt-1">
-                {lang === 'km' ? `លោកស្រី ឈាង លាងហេង` : `Mrs. Chheang Leangheng`}
-                <span className="text-xs text-amber-800 ml-1 font-normal">(អ្នកម្តាយខាងស្រី)</span>
-              </p>
+              {config.brideFatherKm.trim() && (
+                <p className="text-sm font-semibold text-stone-800">
+                  {lang === 'km'
+                    ? `លោក ${config.brideFatherKm}`
+                    : `${config.brideFatherEn.trim() ? 'Mr. ' : ''}${config.brideFatherEn || config.brideFatherKm}`}
+                  <span className="text-xs text-amber-800 ml-1 font-normal">
+                    {lang === 'km' ? '(លោកឪពុកខាងស្រី)' : "(Bride's father)"}
+                  </span>
+                </p>
+              )}
+              {config.brideMotherKm.trim() && (
+                <p className="text-sm font-semibold text-stone-800 mt-1">
+                  {lang === 'km'
+                    ? `លោកស្រី ${config.brideMotherKm}`
+                    : `${config.brideMotherEn.trim() ? 'Mrs. ' : ''}${config.brideMotherEn || config.brideMotherKm}`}
+                  <span className="text-xs text-amber-800 ml-1 font-normal">
+                    {lang === 'km' ? '(អ្នកម្តាយខាងស្រី)' : "(Bride's mother)"}
+                  </span>
+                </p>
+              )}
 
               <div className="mt-4 pt-3 border-t border-amber-200/70">
                 <p className="text-xs text-[#4A0E17] font-semibold uppercase">
