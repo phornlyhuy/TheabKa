@@ -185,14 +185,14 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
   return (
     <div className="space-y-6">
       {/* Top Action Bar */}
-      <div className="sticky top-2 z-30 flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-white/95 backdrop-blur-md border border-stone-200 shadow-md">
-        <div className="flex items-center gap-2">
+      <div className="sticky top-32 sm:top-[4.5rem] z-30 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2 sm:gap-3 p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-white/95 backdrop-blur-md border border-stone-200 shadow-md">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {/* Switch Edit / Preview */}
           <div className="bg-stone-100 p-1 rounded-2xl flex items-center">
             <button
               onClick={() => setViewMode('edit')}
               type="button"
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === 'edit'
                   ? 'bg-white text-stone-900 shadow-sm'
                   : 'text-stone-600 hover:text-stone-900'
@@ -203,7 +203,7 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
             <button
               onClick={() => setViewMode('preview')}
               type="button"
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                 viewMode === 'preview'
                   ? 'bg-white text-stone-900 shadow-sm'
                   : 'text-stone-600 hover:text-stone-900'
@@ -253,23 +253,23 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
         )}
 
         {/* Save Draft & Publish */}
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <button
             onClick={handleSaveDraft}
             type="button"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-semibold shadow-sm transition-all cursor-pointer"
+            className="inline-flex min-w-0 items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-2.5 sm:py-2 rounded-xl sm:rounded-2xl border border-stone-300 hover:bg-stone-50 text-[10px] sm:text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             <Save className="w-4 h-4 text-amber-700" />
-            <span>រក្សាទុកពង្រាង (Save Draft)</span>
+            <span className="truncate">រក្សាទុកពង្រាង (Save Draft)</span>
           </button>
 
           <button
             onClick={handlePublish}
             type="button"
-            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-white text-xs font-semibold shadow-md transition-all cursor-pointer"
+            className="inline-flex min-w-0 items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-5 py-2.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-white text-[10px] sm:text-xs font-semibold shadow-md transition-all cursor-pointer"
           >
             <Send className="w-4 h-4 text-amber-200" />
-            <span>ផ្សព្វផ្សាយ (Publish Live)</span>
+            <span className="truncate">ផ្សព្វផ្សាយ (Publish Live)</span>
           </button>
         </div>
       </div>
@@ -336,7 +336,7 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
         /* VIEW MODE: EDITING TABS */
         <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
           {/* Navigation Sub-Tabs */}
-          <div className="flex overflow-x-auto border-b border-stone-200 bg-stone-50/70 p-2 gap-1">
+          <div className="flex overflow-x-auto overscroll-x-contain border-b border-stone-200 bg-stone-50/70 p-2 gap-1">
             {[
               { id: 'couple', label: 'គូស្វាមីភរិយា & មាតាបិតា', icon: Users },
               { id: 'date-venue', label: 'កាលបរិច្ឆេទ & ទីតាំង', icon: MapPin },
@@ -351,7 +351,7 @@ export const InvitationEditor: React.FC<InvitationEditorProps> = ({ initialConfi
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
                   type="button"
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  className={`flex shrink-0 items-center gap-2 px-3 sm:px-4 py-2.5 rounded-2xl text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     activeTab === tab.id
                       ? 'bg-white text-amber-900 shadow-sm border border-stone-200'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'

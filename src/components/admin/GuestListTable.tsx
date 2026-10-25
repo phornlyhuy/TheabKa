@@ -166,11 +166,11 @@ export const GuestListTable: React.FC<GuestListTableProps> = ({ guests, onGuests
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
           <button
             onClick={() => setIsCsvModalOpen(true)}
             type="button"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl border border-stone-200 hover:bg-stone-50 text-stone-700 text-xs font-medium shadow-sm transition-colors cursor-pointer font-kantumruy"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2.5 rounded-2xl border border-stone-200 hover:bg-stone-50 text-[11px] sm:text-xs font-medium shadow-sm transition-colors cursor-pointer font-kantumruy"
             title="Import CSV"
           >
             <Upload className="w-4 h-4 text-amber-700" />
@@ -180,7 +180,7 @@ export const GuestListTable: React.FC<GuestListTableProps> = ({ guests, onGuests
           <button
             onClick={handleExportCsv}
             type="button"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl border border-stone-200 hover:bg-stone-50 text-stone-700 text-xs font-medium shadow-sm transition-colors cursor-pointer font-kantumruy"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2.5 rounded-2xl border border-stone-200 hover:bg-stone-50 text-[11px] sm:text-xs font-medium shadow-sm transition-colors cursor-pointer font-kantumruy"
             title="Export CSV"
           >
             <Download className="w-4 h-4 text-amber-700" />
@@ -190,7 +190,7 @@ export const GuestListTable: React.FC<GuestListTableProps> = ({ guests, onGuests
           <button
             onClick={() => setIsAddModalOpen(true)}
             type="button"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#4A0E17] hover:bg-[#32060f] text-white text-xs font-medium shadow-md transition-all cursor-pointer whitespace-nowrap font-kantumruy"
+            className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-2xl bg-[#4A0E17] hover:bg-[#32060f] text-[11px] sm:text-xs font-medium shadow-md transition-all cursor-pointer whitespace-nowrap font-kantumruy"
           >
             <Plus className="w-4 h-4 text-amber-200" />
             <span>បន្ថែមភ្ញៀវថ្មី (Add Guest)</span>
@@ -501,9 +501,9 @@ const GuestFormModal: React.FC<GuestFormModalProps> = ({ isOpen, guest, onClose,
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden animate-fadeIn">
-        <div className="p-6 bg-[#FAF7F0] border-b border-stone-200 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="relative w-full max-w-lg max-h-[92dvh] sm:max-h-[90vh] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-y-auto animate-fadeIn">
+      <div className="sticky top-0 z-10 p-4 sm:p-6 bg-[#FAF7F0] border-b border-stone-200 flex items-center justify-between">
           <div>
             <h3 className="font-moul text-base text-[#4A0E17]">
               {guest ? 'កែប្រែព័ត៌មានភ្ញៀវ' : 'បន្ថែមភ្ញៀវកិត្តិយសថ្មី'}
@@ -521,7 +521,7 @@ const GuestFormModal: React.FC<GuestFormModalProps> = ({ isOpen, guest, onClose,
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 font-kantumruy">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 font-kantumruy">
           {/* Guest Photo Upload & Preview */}
           <div>
             <label className="block text-xs font-semibold text-stone-700 mb-1.5 flex items-center gap-1.5">

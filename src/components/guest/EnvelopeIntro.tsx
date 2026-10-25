@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MailOpen, Sparkles, User } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Guest, WeddingConfig, Language } from '../../types/wedding';
-import { KhmerCorner, KhmerDivider } from '../common/KhmerOrnament';
+import { KhmerDivider } from '../common/KhmerOrnament';
 
 interface EnvelopeIntroProps {
   guest: Guest | null;
@@ -18,6 +18,9 @@ export const EnvelopeIntro: React.FC<EnvelopeIntroProps> = ({
   onOpen,
 }) => {
   const handleOpenEnvelope = () => {
+    if (isOpening) return;
+    setIsOpening(true);
+
     try {
       confetti({
         particleCount: 100,
@@ -27,7 +30,11 @@ export const EnvelopeIntro: React.FC<EnvelopeIntroProps> = ({
       });
     } catch (_) {}
 
-    onOpen();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      onOpen();
+    } else {
+      window.setTimeout(onOpen, 520);
+    }
   };
 
   const groomName = lang === 'km' ? config.groomNameKm : config.groomNameEn;
@@ -38,6 +45,7 @@ export const EnvelopeIntro: React.FC<EnvelopeIntroProps> = ({
   const preweddingPhotos = config.gallery.filter(photo => photo.url);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [previousPhotoIndex, setPreviousPhotoIndex] = useState<number | null>(null);
+  const [isOpening, setIsOpening] = useState(false);
 
   useEffect(() => {
     if (preweddingPhotos.length < 2) return;
@@ -82,13 +90,7 @@ export const EnvelopeIntro: React.FC<EnvelopeIntroProps> = ({
       <div className="absolute bottom-10 right-10 w-48 h-48 bg-[#4A0E17]/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Envelope Card */}
-      <div className="envelope-card-enter w-full max-w-lg bg-gradient-to-b from-[#fffefc] to-[#fbf8f0] rounded-3xl shadow-[0_25px_60px_-15px_rgba(74,14,23,0.18)] border-2 border-[#C5A059]/80 p-4 sm:p-10 relative text-center z-10">
-        {/* Khmer Corners */}
-        <KhmerCorner position="top-left" className="absolute top-2 left-2 text-[#C5A059]" size={36} />
-        <KhmerCorner position="top-right" className="absolute top-2 right-2 text-[#C5A059]" size={36} />
-        <KhmerCorner position="bottom-left" className="absolute bottom-2 left-2 text-[#C5A059]" size={36} />
-        <KhmerCorner position="bottom-right" className="absolute bottom-2 right-2 text-[#C5A059]" size={36} />
-
+      <div className={`envelope-card-enter ${isOpening ? 'envelope-card-exit' : ''} w-full max-w-lg bg-gradient-to-b from-[#fffefc] to-[#fbf8f0] rounded-3xl shadow-[0_25px_60px_-15px_rgba(74,14,23,0.18)] border-2 border-[#C5A059]/80 p-4 sm:p-10 relative text-center z-10`}>
         {/* Monogram T & Y Header */}
         <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#FAF7F0] via-white to-amber-100 border border-[#C5A059] shadow-inner mb-2">
           <span className="font-serif font-bold text-sm tracking-widest text-[#4A0E17]">
@@ -202,10 +204,17 @@ export const EnvelopeIntro: React.FC<EnvelopeIntroProps> = ({
           <button
             onClick={handleOpenEnvelope}
             type="button"
-            className="mt-6 inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-[#4A0E17] hover:bg-[#32060f] text-white font-medium text-sm sm:text-base shadow-lg hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 font-kantumruy"
+            disabled={isOpening}
+            aria-busy={isOpening}
+            className={`invitation-open-button ${isOpening ? 'is-opening' : ''} mt-6 relative inline-flex min-h-[68px] w-full max-w-[290px] items-center justify-center gap-2.5 overflow-hidden rounded-full border border-[#e2bd55] px-6 py-3.5 text-white font-medium text-sm sm:text-base shadow-[0_9px_22px_rgba(74,14,23,0.25)] transition-all cursor-pointer font-kantumruy`}
           >
-            <MailOpen className="w-5 h-5 text-amber-200" />
-            <span>{lang === 'km' ? 'បើកមើលលិខិតអញ្ជើញ' : 'Open Invitation'}</span>
+            <svg className="invitation-button-frame" viewBox="0 0 360 72" preserveAspectRatio="none" aria-hidden="true">
+              <rect x="5" y="5" width="350" height="62" rx="31" />
+            </svg>
+            <span className="invitation-button-content">
+              <MailOpen className="invitation-button-icon w-5 h-5 text-amber-200" />
+              <span>{lang === 'km' ? 'បើកមើលលិខិតអញ្ជើញ' : 'Open Invitation'}</span>
+            </span>
           </button>
         </div>
 

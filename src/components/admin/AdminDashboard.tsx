@@ -81,29 +81,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onView
     <div className="min-h-screen bg-[#FAF7F0] text-stone-900 pb-20 selection:bg-amber-200">
       {/* Top Navbar */}
       <header className="bg-white border-b border-stone-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4A0E17] to-[#7A1E2C] flex items-center justify-center text-white shadow-md">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-2xl bg-gradient-to-br from-[#4A0E17] to-[#7A1E2C] flex items-center justify-center text-white shadow-md">
               <Heart className="w-5 h-5 fill-current text-amber-200" />
             </div>
-            <div>
-              <h1 className="font-moul text-sm sm:text-base text-stone-900 flex items-center gap-2">
-                <span>{config.groomNameKm} & {config.brideNameKm}</span>
-                <span className="text-[10px] font-sans font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+            <div className="min-w-0">
+              <h1 className="font-moul text-xs sm:text-base text-stone-900 flex min-w-0 items-center gap-2">
+                <span className="truncate">{config.groomNameKm} & {config.brideNameKm}</span>
+                <span className="hidden min-[420px]:inline-flex shrink-0 text-[10px] font-sans font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
                   T & Y Admin
                 </span>
               </h1>
-              <p className="text-[11px] text-stone-500 font-kantumruy">
+              <p className="hidden min-[360px]:block truncate text-[10px] sm:text-[11px] text-stone-500 font-kantumruy">
                 {config.solarDateKm} • {config.venueNameKm}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             <button
               onClick={onViewGuestSite}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FAF7F0] hover:bg-stone-200/60 text-[#4A0E17] border border-amber-300/80 text-xs font-semibold shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl bg-[#FAF7F0] hover:bg-stone-200/60 text-[#4A0E17] border border-amber-300/80 text-[10px] sm:text-xs font-semibold shadow-sm transition-all cursor-pointer whitespace-nowrap"
             >
               <ExternalLink className="w-3.5 h-3.5 text-amber-700" />
               <span className="hidden sm:inline">មើលទំព័រភ្ញៀវ (View Website)</span>
@@ -123,7 +123,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onView
         </div>
 
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-2 border-t border-stone-100 overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 flex gap-1 sm:gap-2 border-t border-stone-100 overflow-x-auto overscroll-x-contain">
           {[
             { id: 'guests', label: 'បញ្ជីភ្ញៀវ & តំណភ្ជាប់', icon: Users, badge: totalGuests },
             { id: 'wishes', label: '💌 សារជូនពរពីភ្ញៀវ', icon: MessageSquare, badge: wishesCount, highlight: true },
@@ -137,7 +137,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onView
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 type="button"
-                className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap font-kantumruy ${
+                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 py-3 px-2.5 sm:px-4 text-[11px] sm:text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap font-kantumruy ${
                   isActive
                     ? 'border-[#4A0E17] text-[#4A0E17]'
                     : 'border-transparent text-stone-500 hover:text-stone-900 hover:border-stone-300'
@@ -163,7 +163,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onView
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6">
         {!isSupabaseConfigured && (
           <div role="status" className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
             Supabase is not configured. Imported guests and RSVPs stay in this browser, so personal links will not work on guests' phones yet. Follow the setup steps in README.md.

@@ -186,20 +186,28 @@ grant execute on function public.get_guest_by_token(text) to anon, authenticated
 grant execute on function public.get_published_wedding_config() to anon, authenticated;
 grant execute on function public.submit_guest_rsvp(text, text, integer, text, text) to anon, authenticated;
 
-create or replace function public.get_public_wedding_wishes()
+drop function if exists public.get_public_wedding_wishes();
+
+create function public.get_public_wedding_wishes()
 returns table (
   id uuid,
   guest_name text,
   message text,
-  created_at timestamptz
+  created_at timestamptz,
+  photo_url text
 )
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select w.id, w.guest_name, w.message, w.created_at
+  select w.id,
+         w.guest_name,
+         w.message,
+         w.created_at,
+         nullif(g.data ->> 'photoUrl', '') as photo_url
   from public.wedding_wishes as w
+  left join public.wedding_guests as g on g.id = w.guest_id
   order by w.created_at desc
   limit 100;
 $$;

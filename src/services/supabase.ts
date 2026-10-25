@@ -89,12 +89,14 @@ function mapWish(row: {
   guest_name: string;
   message: string;
   created_at: string;
+  photo_url?: string | null;
 }): WeddingWish {
   return {
     id: row.id,
     guestName: row.guest_name,
     message: row.message,
     date: row.created_at,
+    photoUrl: row.photo_url || undefined,
   };
 }
 

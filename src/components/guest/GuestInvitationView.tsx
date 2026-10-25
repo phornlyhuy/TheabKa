@@ -14,12 +14,13 @@ import {
   MessageCircle,
   Send,
   Check,
-  CheckCircle2
+  CheckCircle2,
+  Download,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
 import { Guest, WeddingConfig, Language, WeddingWish } from '../../types/wedding';
-import { KhmerDivider, KhmerCorner, KhmerRoyalCrest, DamaskCornerOrnament } from '../common/KhmerOrnament';
+import { KhmerDivider, DamaskCornerOrnament } from '../common/KhmerOrnament';
 import { CountdownTimer } from './CountdownTimer';
 import { AddToCalendarButton } from './AddToCalendarButton';
 import { GalleryLightbox } from './GalleryLightbox';
@@ -44,6 +45,7 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
   const [lang, setLang] = useState<Language>('km');
   const [currentGuest, setCurrentGuest] = useState<Guest | null>(guest);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [qrDownloadError, setQrDownloadError] = useState('');
   const [copiedShareLink, setCopiedShareLink] = useState(false);
 
   // Dedicated Wish form state matching user screenshot
@@ -105,6 +107,33 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
     navigator.clipboard.writeText(window.location.href);
     setCopiedShareLink(true);
     setTimeout(() => setCopiedShareLink(false), 2500);
+  };
+
+  const handleDownloadGiftQr = async () => {
+    const qrImage = config.giftQrImage || qrCodeDataUrl;
+    if (!qrImage) return;
+
+    try {
+      const response = await fetch(qrImage);
+      if (!response.ok) throw new Error(`QR image request failed: ${response.status}`);
+
+      const imageUrl = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = 'Wedding-KHQR.png';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+      setQrDownloadError('');
+    } catch (error) {
+      console.error('Failed to download wedding gift QR code', error);
+      setQrDownloadError(
+        lang === 'km'
+          ? 'មិនអាចទាញយក QR Code បានទេ។ សូមព្យាយាមម្តងទៀត។'
+          : 'Could not download the QR code. Please try again.',
+      );
+    }
   };
 
   // Submit wish directly on page as shown in screenshot
@@ -200,17 +229,9 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
         
         {/* SECTION 1: Cover Header & Title */}
         <section className="wedding-card-glass rounded-2xl sm:rounded-3xl p-4 sm:p-10 text-center relative overflow-hidden bg-white/90 shadow-xl border border-amber-200/80">
-          <KhmerCorner position="top-left" className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 text-[#C5A059]" size={36} />
-          <KhmerCorner position="top-right" className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 text-[#C5A059]" size={36} />
-          <KhmerCorner position="bottom-left" className="absolute bottom-1.5 left-1.5 sm:bottom-2 sm:left-2 text-[#C5A059]" size={36} />
-          <KhmerCorner position="bottom-right" className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 text-[#C5A059]" size={36} />
-
-          {/* Royal Crest with T & Y monogram */}
-          <KhmerRoyalCrest
-            monogram="T & Y"
-            title={lang === 'km' ? config.invitationTitleKm : config.invitationTitleEn}
-            className="mb-4"
-          />
+          <p className="font-moul text-[#4A0E17] tracking-wide text-sm md:text-base mb-4">
+            {lang === 'km' ? config.invitationTitleKm : config.invitationTitleEn}
+          </p>
 
           <h1 className="font-moul text-xl min-[380px]:text-2xl sm:text-4xl text-[#4A0E17] mt-2 mb-2 leading-relaxed">
             {groomName}
@@ -288,9 +309,6 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
 
         {/* SECTION 3 & 4: Parents & Families Information */}
         <section className="wedding-card-glass rounded-2xl sm:rounded-3xl p-4 sm:p-10 relative bg-white/90 shadow-xl border border-amber-200/80">
-          <KhmerCorner position="top-left" size={36} className="absolute top-2 left-2 text-[#C5A059]" />
-          <KhmerCorner position="top-right" size={36} className="absolute top-2 right-2 text-[#C5A059]" />
-
           <div className="text-center mb-6">
             <span className="text-xs uppercase tracking-widest text-[#4A0E17] font-semibold">
               {lang === 'km' ? 'មាតាបិតាទាំងសងខាង' : 'RESPECTED PARENTS'}
@@ -358,9 +376,6 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
 
         {/* SECTION 5: Khmer Invitation Letter */}
         <section id="calendar-section" className="wedding-card-glass rounded-3xl p-6 sm:p-10 text-center relative bg-white/90 shadow-xl border border-amber-200/80">
-          <KhmerCorner position="top-left" size={32} className="absolute top-2 left-2 text-[#C5A059]" />
-          <KhmerCorner position="top-right" size={32} className="absolute top-2 right-2 text-[#C5A059]" />
-          
           <h2 className="font-moul text-xl sm:text-2xl text-[#4A0E17]">
             {lang === 'km' ? 'លិខិតអញ្ជើញ' : 'Letter of Invitation'}
           </h2>
@@ -562,11 +577,11 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
         {config.giftEnabled && (
           <section id="gift-section" className="space-y-4">
             {/* Deep Burgundy Card exactly matching user reference photo */}
-            <div className="relative rounded-3xl bg-[#4A0E17] text-white p-8 sm:p-10 text-center overflow-hidden shadow-2xl border border-amber-900/50">
+            <div className="relative rounded-3xl bg-[#4A0E17] text-white p-5 min-[380px]:p-7 sm:p-10 text-center overflow-hidden shadow-2xl border border-amber-900/50">
               <DamaskCornerOrnament position="top-left" className="absolute top-0 left-0 text-amber-200/25" size={90} />
               <DamaskCornerOrnament position="bottom-right" className="absolute bottom-0 right-0 text-amber-200/25" size={90} />
               
-              <h2 className="font-moul text-2xl sm:text-3xl text-amber-100 tracking-wider mb-3">
+              <h2 className="font-moul text-xl min-[380px]:text-2xl sm:text-3xl text-amber-100 tracking-wider mb-3">
                 {lang === 'km' ? 'ចំណងដៃ' : 'Wedding Gift'}
               </h2>
               <p className="text-sm sm:text-base font-kantumruy text-amber-100/95 max-w-md mx-auto leading-relaxed">
@@ -575,27 +590,44 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
             </div>
 
             {/* QR Card Container */}
-            <div className="wedding-card-glass rounded-3xl p-6 sm:p-8 text-center relative border border-amber-300/60 shadow-lg bg-white">
-              <div className="relative inline-block mb-3">
+            <div className="wedding-card-glass rounded-3xl p-4 min-[380px]:p-6 sm:p-8 text-center relative border border-amber-300/60 shadow-lg bg-white">
+              <div className="relative inline-block w-full max-w-full mb-3">
                 {/* Speech bubble prompt as shown in user photo */}
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-stone-800 text-xs font-medium shadow-md border border-stone-200 mb-3 animate-bounce">
+                <div className="inline-flex max-w-full items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-white text-stone-800 text-[11px] min-[380px]:text-xs font-medium shadow-md border border-stone-200 mb-3 animate-bounce">
                   <MessageCircle className="w-3.5 h-3.5 text-[#4A0E17]" />
-                  <span>{lang === 'km' ? 'ស្កេនដើម្បីចងដៃតាម KHQR' : 'Scan to gift via KHQR'}</span>
+                  <span className="min-w-0">{lang === 'km' ? 'ស្កេនដើម្បីចងដៃតាម KHQR' : 'Scan to gift via KHQR'}</span>
                 </div>
 
-                <div className="p-3 bg-white rounded-2xl shadow-md border-2 border-stone-200">
+                <div className="mx-auto w-fit max-w-full p-2 min-[380px]:p-3 bg-white rounded-2xl shadow-md border-2 border-stone-200">
                   {config.giftQrImage || qrCodeDataUrl ? (
                     <img
                       src={config.giftQrImage || qrCodeDataUrl}
                       alt="Wedding Gift QR Code"
-                      className="w-48 h-48 mx-auto rounded-lg"
+                      className="w-44 h-44 min-[380px]:w-48 min-[380px]:h-48 mx-auto rounded-lg object-contain"
                     />
                   ) : (
-                    <div className="w-48 h-48 bg-stone-100 flex items-center justify-center">
+                    <div className="w-44 h-44 min-[380px]:w-48 min-[380px]:h-48 bg-stone-100 flex items-center justify-center">
                       <QrCode className="w-12 h-12 text-stone-400" />
                     </div>
                   )}
                 </div>
+                {(config.giftQrImage || qrCodeDataUrl) && (
+                  <div className="mt-3 w-full">
+                    <button
+                      onClick={() => void handleDownloadGiftQr()}
+                      type="button"
+                      className="inline-flex w-full sm:w-auto max-w-full items-center justify-center gap-2 rounded-full border border-amber-300 bg-white px-3 min-[380px]:px-5 py-2.5 text-xs min-[380px]:text-sm font-semibold text-[#4A0E17] shadow-sm transition-all hover:bg-amber-50 hover:shadow-md active:scale-95 cursor-pointer font-kantumruy"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>{lang === 'km' ? 'ទាញយក QR Code' : 'Download QR Code'}</span>
+                    </button>
+                    {qrDownloadError && (
+                      <p role="alert" className="mt-2 text-xs text-rose-700 font-kantumruy">
+                        {qrDownloadError}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="mt-3 space-y-1">
@@ -641,10 +673,10 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
                           <img
                             src={w.photoUrl}
                             alt={w.guestName}
-                            className="w-8 h-8 rounded-full object-cover border border-[#C5A059] shadow-xs"
+                            className="w-10 h-10 rounded-full object-cover border border-[#C5A059] shadow-xs"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-[#4A0E17] text-amber-200 text-xs font-bold flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-[#4A0E17] text-amber-200 text-xs font-bold flex items-center justify-center">
                             {w.guestName.charAt(0)}
                           </div>
                         )}
@@ -656,7 +688,7 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
                         {new Date(w.date).toLocaleDateString('km-KH')}
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm text-stone-700 leading-relaxed pl-9 italic font-kantumruy">
+                    <p className="text-xs sm:text-sm text-stone-700 leading-relaxed pl-12 italic font-kantumruy">
                       "{w.message}"
                     </p>
                   </div>
