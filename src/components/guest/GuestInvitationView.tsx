@@ -194,6 +194,10 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
 
   const groomName = lang === 'km' ? config.groomNameKm : config.groomNameEn;
   const brideName = lang === 'km' ? config.brideNameKm : config.brideNameEn;
+  const coupleNamesEn = [config.groomNameEn, config.brideNameEn]
+    .map(name => name.trim())
+    .filter(Boolean)
+    .join(' ❤️ ');
 
   const bgStyle = config.backgroundImage
     ? { backgroundImage: `url("${config.backgroundImage}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
@@ -239,9 +243,11 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
             {brideName}
           </h1>
 
-          <p className="text-xs sm:text-sm text-stone-500 font-serif italic mb-2">
-            Roun Reatrey ❤️ Phorn Chakriya
-          </p>
+          {coupleNamesEn && (
+            <p className="text-xs sm:text-sm text-stone-500 font-serif italic mb-2">
+              {coupleNamesEn}
+            </p>
+          )}
 
           <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-stone-700 mt-2 font-medium">
             <Calendar className="w-4 h-4 text-[#C5A059]" />
@@ -261,7 +267,7 @@ export const GuestInvitationView: React.FC<GuestInvitationViewProps> = ({
             <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[16/10] sm:aspect-[16/9] border-2 border-amber-200">
               <img
                 src={config.coverImage}
-                alt="Roun Reatrey & Phorn Chakriya"
+                alt={`${config.groomNameEn} & ${config.brideNameEn}`}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
